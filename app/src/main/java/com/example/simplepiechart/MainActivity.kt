@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.geometry.center
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import com.example.simplepiechart.ui.theme.SimplePieChartTheme
 
@@ -45,15 +46,15 @@ fun PieChartContainer() {
     )
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        PieChart(data = pieData, modifier = Modifier.size(300.dp))
+        DoughnutChart(data = pieData, modifier = Modifier.size(300.dp))
     }
 }
 
-
 @Composable
-fun PieChart(
+fun DoughnutChart(
     data: List<PieChartData>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    holeRadiusFraction: Float = 0.5f // Fraction of the radius to leave as hole
 ) {
     val totalValue = data.sumOf { it.value.toInt() }
     val angles = data.map { it.value / totalValue * 360f }
@@ -73,18 +74,17 @@ fun PieChart(
                 color = slice.color,
                 startAngle = startAngle,
                 sweepAngle = sweepAngle,
-                useCenter = true
+                useCenter = false,
+                style = Stroke(width = size.minDimension * (1 - holeRadiusFraction) / 2)
             )
 
-            // Calculate the angle for the label
             val angleInDegrees = startAngle + sweepAngle / 2
             val angleInRadians = Math.toRadians(angleInDegrees.toDouble())
 
-            // Calculate the position for the label
             val radius = size.minDimension / 2
-            val labelRadius = radius * 0.7 // Position the label at 70% of the radius
-            val x = (size.center.x + labelRadius * Math.cos(angleInRadians)).toFloat()
-            val y = (size.center.y + labelRadius * Math.sin(angleInRadians)).toFloat()
+            val labelRadius = radius * (1 + holeRadiusFraction) / 1.5 // Position the label between the hole and the edge
+            val x = (center.x + labelRadius * Math.cos(angleInRadians)).toFloat()
+            val y = (center.y + labelRadius * Math.sin(angleInRadians)).toFloat()
 
             drawIntoCanvas { canvas ->
                 val paint = android.graphics.Paint().apply {
